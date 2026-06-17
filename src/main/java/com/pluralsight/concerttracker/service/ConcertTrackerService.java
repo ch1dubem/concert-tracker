@@ -146,6 +146,16 @@ public class ConcertTrackerService {
         concertRepository.deleteById(id);
     }
 
+    // ===== Searches =====
+    public List<Concert> byYear(int year) { return concertRepository.findByConcertYear(year); }
+    public List<Concert> byArtist(String name) { return concertRepository.searchByArtistName(name); }
+    public List<Concert> byVenue(String name) { return concertRepository.searchByVenueName(name); }
+    public List<Concert> byCity(String city) { return concertRepository.searchByCity(city); }
+    public List<Concert> byMaxPrice(double maxPrice) { return concertRepository.findByTicketPriceLessThanEqual(maxPrice); }
+    public List<Concert> byPriceRange(double min, double max) { return concertRepository.findByTicketPriceBetween(min, max); }
+    public List<Concert> advancedSearch(double maxPrice, int minYear) { return concertRepository.search(maxPrice, minYear); }
+
+
     // ===== Seeding =====
     public void seedIfEmpty() {
         if (concertRepository.count() > 0) {

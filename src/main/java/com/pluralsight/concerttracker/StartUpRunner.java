@@ -64,6 +64,7 @@ public class StartUpRunner implements CommandLineRunner {
             System.out.println("4) Update ticket price");
             System.out.println("5) Update tickets sold");
             System.out.println("6) Delete a concert");
+            System.out.println("7) Search concerts");
             System.out.println("0) Back");
             try {
                 switch (prompt("Choose: ")) {
@@ -73,6 +74,7 @@ public class StartUpRunner implements CommandLineRunner {
                     case "4" -> updateConcertPrice();
                     case "5" -> updateTicketsSold();
                     case "6" -> deleteConcert();
+                    case "7" -> searchScreen();
                     case "0" -> back = true;
                     default -> System.out.println("Unknown option.");
                 }
@@ -139,6 +141,45 @@ public class StartUpRunner implements CommandLineRunner {
     private void deleteConcert() {
         service.deleteConcert(promptLong("Concert id to delete: "));
         System.out.println("Deleted.");
+    }
+
+
+    private void searchScreen() {
+        boolean back = false;
+        while (!back) {
+            System.out.println("\n----- Search Concerts -----");
+            System.out.println("1) By year");
+            System.out.println("2) By artist");
+            System.out.println("3) By venue");
+            System.out.println("4) By city");
+            System.out.println("5) By maximum price");
+            System.out.println("6) By price range");
+            System.out.println("7) Advanced (max price and earliest year)");
+            System.out.println("0) Back");
+            try {
+                switch (prompt("Choose: ")) {
+                    case "1" -> printConcerts(service.byYear(promptInt("Year: ")));
+                    case "2" -> printConcerts(service.byArtist(prompt("Artist name contains: ")));
+                    case "3" -> printConcerts(service.byVenue(prompt("Venue name: ")));
+                    case "4" -> printConcerts(service.byCity(prompt("City: ")));
+                    case "5" -> printConcerts(service.byMaxPrice(promptDouble("Maximum price: ")));
+                    case "6" -> {
+                        double min = promptDouble("Minimum price: ");
+                        double max = promptDouble("Maximum price: ");
+                        printConcerts(service.byPriceRange(min, max));
+                    }
+                    case "7" -> {
+                        double max = promptDouble("Maximum price: ");
+                        int year = promptInt("Earliest year: ");
+                        printConcerts(service.advancedSearch(max, year));
+                    }
+                    case "0" -> back = true;
+                    default -> System.out.println("Unknown option.");
+                }
+            } catch (NotFoundException | IllegalArgumentException e) {
+                System.out.println(e.getMessage());
+            }
+        }
     }
 
     // ===== Artists =====
