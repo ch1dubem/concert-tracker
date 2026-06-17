@@ -155,7 +155,20 @@ public class ConcertTrackerService {
     public List<Concert> byPriceRange(double min, double max) { return concertRepository.findByTicketPriceBetween(min, max); }
     public List<Concert> advancedSearch(double maxPrice, int minYear) { return concertRepository.search(maxPrice, minYear); }
 
+    // ===== Reports =====
+    public List<Object[]> revenuePerVenue() { return concertRepository.revenuePerVenue(); }
 
+    public Object[] busiestVenue() {
+        List<Object[]> rows = concertRepository.venueConcertCounts();
+        return rows.isEmpty() ? null : rows.get(0);
+    }
+
+    public Object[] busiestArtist() {
+        List<Object[]> rows = concertRepository.artistConcertCounts();
+        return rows.isEmpty() ? null : rows.get(0);
+    }
+
+    public List<Object[]> averagePriceByYear() { return concertRepository.averagePriceByYear(); }
     // ===== Seeding =====
     public void seedIfEmpty() {
         if (concertRepository.count() > 0) {

@@ -41,12 +41,14 @@ public class StartUpRunner implements CommandLineRunner {
             System.out.println("2) Artists");
             System.out.println("3) Venues");
             System.out.println("4) Promoters");
+            System.out.println("5) Reports");
             System.out.println("0) Quit");
             switch (prompt("Choose: ")) {
                 case "1" -> concertsScreen();
                 case "2" -> artistsScreen();
                 case "3" -> venuesScreen();
                 case "4" -> promotersScreen();
+                case "5" -> reportsScreen();
                 case "0" -> running = false;
                 default -> System.out.println("Unknown option.");
             }
@@ -312,6 +314,73 @@ public class StartUpRunner implements CommandLineRunner {
     private void printPromoters(List<Promoter> promoters) {
         if (promoters.isEmpty()) { System.out.println("No promoters found."); return; }
         for (Promoter p : promoters) System.out.println(p.getId() + " - " + p.getName());
+    }
+
+    // ===== Reports =====
+    private void reportsScreen() {
+        boolean back = false;
+        while (!back) {
+            System.out.println("\n----- Reports -----");
+            System.out.println("1) Revenue per venue");
+            System.out.println("2) Busiest venue & artist");
+            System.out.println("3) Average ticket price by year");
+            System.out.println("4) Capacity report");
+            System.out.println("0) Back");
+            try {
+                switch (prompt("Choose: ")) {
+                    case "1" -> revenuePerVenue();
+                    case "2" -> busiest();
+                    case "3" -> averagePriceByYear();
+                    case "4" -> capacityReport();
+                    case "0" -> back = true;
+                    default -> System.out.println("Unknown option.");
+                }
+            } catch (NotFoundException | IllegalArgumentException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
+    private void revenuePerVenue() {
+        List<Object[]> rows = service.revenuePerVenue();
+        if (rows.isEmpty()) { System.out.println("No concert data yet."); return; }
+        System.out.println("Revenue per venue:");
+        for (Object[] row : rows) {
+            System.out.println("  " + row[0] + ": " + money.format(((Number) row[1]).doubleValue()));
+        }
+    }
+
+    private void busiest() {
+        Object[] venue = service.busiestVenue();
+        Object[] artist = service.busiestArtist();
+        if (venue == null || artist == null) { System.out.println("No concert data yet."); return; }
+        System.out.println("Busiest venue:  " + venue[0] + " (" + venue[1] + " concerts)");
+        System.out.println("Busiest artist: " + artist[0] + " (" + artist[1] + " concerts)");
+    }
+
+    private void averagePriceByYear() {
+        List<Object[]> rows = service.averagePriceByYear();
+        if (rows.isEmpty()) { System.out.println("No concert data yet."); return; }
+        System.out.println("Average ticket price by year:");
+        for (Object[] row : rows) {
+            int year = ((Number) row[0]).intValue();
+            double avg = ((Number) row[1]).doubleValue();
+            System.out.println("  " + year + ": " + money.format(avg));
+        }
+    }
+
+    private void capacityReport() {
+        List<Concert> concerts = service.allConcerts();
+        if (concerts.isEmpty()) { System.out.println("No concert data yet."); return; }
+        System.out.println("Capacity report:");
+        for (Concert c : concerts) {
+            int capacity = c.getVenue().getCapacity();
+            double percent = capacity == 0 ? 0 : (c.getTicketsSold() * 100.0) / capacity;
+            String soldOut = c.getTicketsSold() >= capacity ? "  [SOLD OUT]" : "";
+            System.out.printf("  #%d %s @ %s: %d/%d (%.1f%%)%s%n",
+                    c.getId(), c.getArtist().getName(), c.getVenue().getName(),
+                    c.getTicketsSold(), capacity, percent, soldOut);
+        }
     }
 
     // ===== Display + input helpers =====
