@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-// The menu talks only to this class. This class talks to the repositories.
 @Service
 public class ConcertTrackerService {
 
@@ -33,13 +32,121 @@ public class ConcertTrackerService {
         this.concertRepository = concertRepository;
     }
 
-    public long countConcerts() { return concertRepository.count(); }
-    public List<Concert> allConcerts() { return concertRepository.findAll(); }
+    // ===== Venues =====
     public List<Venue> allVenues() { return venueRepository.findAll(); }
+
+    public Venue venueById(long id) {
+        return venueRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("No venue with id " + id));
+    }
+
+    public Venue addVenue(String name, String city, int capacity) {
+        if (capacity < 0) throw new IllegalArgumentException("Capacity cannot be negative.");
+        return venueRepository.save(new Venue(name, city, capacity));
+    }
+
+    public Venue updateVenueCapacity(long id, int capacity) {
+        if (capacity < 0) throw new IllegalArgumentException("Capacity cannot be negative.");
+        Venue venue = venueById(id);
+        venue.setCapacity(capacity);
+        return venueRepository.save(venue);
+    }
+
+    public void deleteVenue(long id) {
+        if (!venueRepository.existsById(id)) throw new NotFoundException("No venue with id " + id);
+        venueRepository.deleteById(id);
+    }
+
+    public List<Venue> venuesByCity(String city) { return venueRepository.findByCity(city); }
+    public List<Venue> venuesByName(String name) { return venueRepository.findByName(name); }
+    public List<Venue> venuesByMinCapacity(int capacity) { return venueRepository.findByCapacity(capacity); }
+
+    // ===== Artists =====
     public List<Artist> allArtists() { return artistRepository.findAll(); }
+
+    public Artist artistById(long id) {
+        return artistRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("No artist with id " + id));
+    }
+
+    public Artist addArtist(String name, String genre) { return artistRepository.save(new Artist(name, genre)); }
+
+    public Artist updateArtistGenre(long id, String genre) {
+        Artist artist = artistById(id);
+        artist.setGenre(genre);
+        return artistRepository.save(artist);
+    }
+
+    public void deleteArtist(long id) {
+        if (!artistRepository.existsById(id)) throw new NotFoundException("No artist with id " + id);
+        artistRepository.deleteById(id);
+    }
+
+    public List<Artist> artistsByGenre(String genre) { return artistRepository.findByGenre(genre); }
+    public List<Artist> artistsByName(String name) { return artistRepository.findByName(name); }
+
+    // ===== Promoters =====
     public List<Promoter> allPromoters() { return promoterRepository.findAll(); }
 
-    // Only seed when empty, so a second run doesn't pile on duplicates.
+    public Promoter addPromoter(String name) { return promoterRepository.save(new Promoter(name)); }
+
+    public void deletePromoter(long id) {
+        if (!promoterRepository.existsById(id)) throw new NotFoundException("No promoter with id " + id);
+        promoterRepository.deleteById(id);
+    }
+
+    public List<Promoter> promotersByName(String name) { return promoterRepository.findByName(name); }
+
+    private Promoter promoterById(long id) {
+        return promoterRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("No promoter with id " + id));
+    }
+
+    // ===== Concerts =====
+    public long countConcerts() { return concertRepository.count(); }
+    public List<Concert> allConcerts() { return concertRepository.findAll(); }
+
+    public Concert concertById(long id) {
+        return concertRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("No concert with id " + id));
+    }
+
+    public Concert addConcert(long artistId, long venueId, long promoterId,
+                              int year, double price, int ticketsSold) {
+        Artist artist = artistById(artistId);
+        Venue venue = venueById(venueId);
+        Promoter promoter = promoterById(promoterId);
+        if (price < 0) throw new IllegalArgumentException("Ticket price cannot be negative.");
+        if (ticketsSold < 0) throw new IllegalArgumentException("Tickets sold cannot be negative.");
+        if (ticketsSold > venue.getCapacity())
+            throw new IllegalArgumentException("Tickets sold (" + ticketsSold
+                    + ") cannot exceed the venue capacity (" + venue.getCapacity() + ").");
+        return concertRepository.save(new Concert(year, price, ticketsSold, artist, venue, promoter));
+    }
+
+    public Concert updateConcertPrice(long id, double price) {
+        if (price < 0) throw new IllegalArgumentException("Ticket price cannot be negative.");
+        Concert concert = concertById(id);
+        concert.setTicketPrice(price);
+        return concertRepository.save(concert);
+    }
+
+    public Concert updateTicketsSold(long id, int ticketsSold) {
+        Concert concert = concertById(id);
+        if (ticketsSold < 0) throw new IllegalArgumentException("Tickets sold cannot be negative.");
+        if (ticketsSold > concert.getVenue().getCapacity())
+            throw new IllegalArgumentException("Tickets sold (" + ticketsSold
+                    + ") cannot exceed the venue capacity (" + concert.getVenue().getCapacity() + ").");
+        concert.setTicketsSold(ticketsSold);
+        return concertRepository.save(concert);
+    }
+
+    public void deleteConcert(long id) {
+        if (!concertRepository.existsById(id)) throw new NotFoundException("No concert with id " + id);
+        concertRepository.deleteById(id);
+    }
+
+    // ===== Seeding =====
     public void seedIfEmpty() {
         if (concertRepository.count() > 0) {
             return;
